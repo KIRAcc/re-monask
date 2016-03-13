@@ -1,0 +1,42 @@
+/* Â¸ÀÞµØ¼ÞÅÙ‚©‚ç */
+
+	.subjectWin-menu,
+	.threadWin-menu {
+		/* center pane that are 'containers' for a nested layout */ 
+		padding: 2px;
+		border: 0;
+	} 
+
+	.menu-buttons {
+	                float: right;
+	                }
+
+	.subjectWin-view,
+	.threadWin-view {
+		/* center pane that are 'containers' for a nested layout */ 
+		padding: 0 0 0 0;
+		background: #efefef;
+	} 
+
+	.subjectWin-view {
+		/* center pane that are 'containers' for a nested layout */ 
+		border: 0;
+		background: #86ce86;
+	} 
+
+	#header {
+		color: white;
+		background: #22b14c;
+		} 
+
+	.cell-textRight {
+	                text-align: right;
+	                }
+
+	.postText {
+                resize: none;
+		width: 100%;
+		height: calc(100% - 2em);
+	} 
+
+/* Â¸ÀÞµØ¼ÞÅÙ‚Ü‚Å */

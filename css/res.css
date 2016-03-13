@@ -1,0 +1,82 @@
+.title {
+    width: 100%;
+    background: #86CE86 none repeat scroll 0% 0%;
+    color: #FFF;
+    font-size: 16px;
+    line-height: 20px;
+}
+
+p.res a.thumbnail{
+	max-width:462px;
+	display:block;
+	margin:10px 0;
+	padding:0;
+}
+p.res {
+	margin:0 10px;
+	line-height:18px;
+}
+
+p.lv0 {
+	font-size:85%;
+}
+p.lv1 {
+
+}
+p.lv2 {
+	font-weight: bold;
+}
+p.lv3 {
+	font-size:125%;
+	line-height:110%;
+	font-weight: bold;
+}
+p.lv4 {
+	color: #22f;
+	font-size:125%;
+	line-height:110%;
+	font-weight: bold;
+}
+p.lv5 {
+	color: #f22;
+	font-size:150%;
+	line-height:110%;
+	font-weight: bold;
+}
+p.lv6 {
+	color: #f22;
+	font-size:200%;
+	line-height:110%;
+	font-weight: bold;
+}
+p.lv7 {
+	color: #dda700;
+	font-size:250%;
+	line-height:110%;
+	font-weight: bold;
+}
+
+.ru{color: #080;text-decoration: none;}
+a.ru:hover{text-decoration:underline}
+.rm,.unread{font-weight:bold}
+.rh{font-family:sans-serif}
+
+a.send{
+	color: #22e;
+	font-weight:bold;
+	text-decoration: none;
+}
+
+ a.send{
+	color: #22e;
+	font-weight:bold;
+	text-decoration: none;
+}
+
+a.send{font-family:'askmonasend',sans-serif;}
+a.send:visited{color: #22e;}
+.tcat,.taglist a,.taglist a:visited{color: #333;font-weight:bold;font-family:sans-serif}
+a.send:hover,a.rc:hover{text-decoration: underline;}
+.taglist a#tagedit,.ltag{font-size:80%}
+.tcat{float:left;font-size:85%}
+a.rc{color: #222; text-decoration:none}
