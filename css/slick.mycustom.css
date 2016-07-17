@@ -1,0 +1,29 @@
+/** ここから http://stackoverflow.com/questions/25067183/way-to-set-global-font-size-in-slickgrid のパクリ **/
+.grid-canvas .slick-cell {
+  /*height: 1.2em !important;*/
+  padding: 5px 7.5834px;
+  font-size: 14px;
+}
+.grid-canvas .slick-cell td {
+  font-size: 14px;
+}
+.slick-header-columns .slick-header-column {
+  /*height: 33px;*/
+  line-height: 14px;
+  margin: 0;
+  border: 0;
+  /* like TH  */
+
+  background: transparent;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: bold;
+  color: #333333;
+}
+.slick-header-columns .slick-header-column.ui-state-default {
+  font-size: 14px;
+  line-height: 14px;
+}
+.slick-header-columns .slick-header-column.ui-state-default td {
+  font-size: 14px;
+}
+/** ここまで **/

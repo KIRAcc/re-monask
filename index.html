@@ -1,14 +1,15 @@
 ﻿<!DOCTYPE html>
 <html>
-<head> 
-	<title>( ´∀｀) MonaSK</title> 
+<head>
+	<title>( ´∀｀) MonaSK</title>
 
 	<link rel="stylesheet" href="./css/main.css">
 	<link rel="stylesheet" href="./css/res.css">
 	<link rel="stylesheet" href="./css/my.css">
 	<link rel="stylesheet" href="./css/jquery-ui.min.css">
 	<link rel="stylesheet" href="./css/slick.grid.css">
-	<link rel="stylesheet" href="./css/jquery.smallipop.min.css">
+	<link rel="stylesheet" href="./css/jquery.qtip.min.css">
+	<link rel="stylesheet" href="./css/slick.mycustom.css">
 
 
 	<script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
@@ -19,10 +20,13 @@
 	<script language="JavaScript" type="text/javascript" src="./js/slick.core.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/slick.formatters.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/slick.grid.js"></script>
-        <script language="JavaScript" type="text/javascript" src="./js/jquery.smallipop.min.js"></script>
+	<script language="JavaScript" type="text/javascript" src="./js/jquery.qtip.min.js"></script>
+	<!--<script language="JavaScript" type="text/javascript" src="./js/imagesloaded.pkg.min.js"></script>-->
 	<script language="JavaScript" type="text/javascript" src="./main.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/sha256.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/jquery.askmona.js"></script>
+
+	<script language="JavaScript" type="text/javascript" src="./site_scripts/askmona/main.site.js"></script>
 
 	<script type="text/javascript">
 
@@ -35,7 +39,7 @@
 		,	spacing_open:			0 // ALL panes
 		,	spacing_closed:			4 // ALL panes
 		,	center__onresize:		"middleLayout.resizeAll"
-		}); 
+		});
 
 		middleLayout = $('div.outer-center').layout({
 			center__paneSelector:	".middle-center"
@@ -61,7 +65,7 @@
 		subjectWinLayout = $('div.inner-north').layout({
 			center__paneSelector:	".subjectWin-view"
 		,	north__paneSelector:		".subjectWin-menu"
-		//,	north__size:				
+		//,	north__size:
 		,	spacing_open:			0  // ALL panes
 		,	spacing_closed:			4  // ALL panes
 		,	center__onresize:		"grid.resizeCanvas"
@@ -71,12 +75,12 @@
 			center__paneSelector:	".threadWin-view"
 		,	north__paneSelector:		".threadWin-menu"
 
-		//,	north__size:				
+		//,	north__size:
 		,	spacing_open:			0  // ALL panes
 		,	spacing_closed:			4  // ALL panes
 		});
 
-	}); 
+	});
 
 	</script>
 
@@ -90,35 +94,83 @@
 
       <div class="inner-north">
         <div class="subjectWin-menu">
-          <div class="menu-buttons">
-            <input type="button" value="更新" id="subject-refresh" />
-          </div>
+					<div class="flex">
+						<div class="menu-history" style="width:auto; z-index:0;">
+							<select id="bbs-history" style="width:100%;"></select>
+						</div>
+						<div class="menu-buttons" style="z-index:1;">
+	            <input type="button" value="更新" id="subject-refresh" onclick="BTN.subjectWin.reload()" />
+	          </div>
+					</div>
         </div>
-	<div class="subjectWin-view"></div>
-      </div> 
-
-      <div class="inner-center">
-	<div class="threadWin-menu">
-          <div class="menu-buttons" id="subject-btns">
-            <input disabled type="button" value="..." />
-          </div>
-        </div>
-	<div class="threadWin-view" style="overflow:scroll"></div>
+	      <div class="subjectWin-view"></div>
       </div>
 
-    </div> 
-	<div class="middle-west">
-         <ul>
-           <li><a href="javascript:void(0)" id="brdList-askMona">Ask Mona</a></li>
-           <li>
-             <a href="javascript:void(0)" id="brdList-AMFav">お気に入り</a>
-             <ul id="brdList-AMFav-list"></ul>
-           </li>
-         </ul>
+      <div class="inner-center">
+        <div class="threadWin-menu">
+					<div class="flex">
+						<div class="menu-history" style="width:auto; z-index:0;">
+							<select id="thread-history" style="width:100%;"></select>
+						</div>
+						<div class="menu-buttons" id="subject-btns">
+							<input type="button" value="新" onclick="BTN.threadWin.reload()" /><input type="button" value="書" onclick="BTN.threadWin.openPostWin()" />
+	          </div>
+					</div>
         </div>
+        <div class="threadWin-view" style="overflow:scroll"></div>
+      </div>
+    </div>
+
+	<div class="middle-west">
+		<div id="bbsmenu">
+		    <dl>
+		        <!-- menu1 -->
+		        <dt>
+		            <a href="javascript:void(0)" class="closer">&nbsp;Ask Mona</a>
+		        </dt>
+		        <dd class="opener" style="display:none;">
+		            <a href="javascript:void(0)" class="link" data-bbs="askmona" data-param="{&quot;cmd&quot;:&quot;listTopics&quot;}">トピック一覧</a>
+		            <a href="javascript:void(0)" class="link" data-bbs="askmona" data-param="{&quot;cmd&quot;:&quot;listFavs&quot;}">お気に入り</a>
+		        </dd>
+		        <!-- menu2 -/->
+		        <dt>
+		            <a href="javascript:void(0)" class="closer">&nbsp;カテゴリⅡ</a>
+		        </dt>
+		        <dd class="opener" style="display:none;">
+							<a href="javascript:void(0)" class="closer">フォルダ</a>
+							<ul>
+								<li><a href="javascript:void(0)" class="end">aaa</a></li>
+							</ul>
+		            <a href="javascript:void(0)" class="line">メニューⅰ</a>
+		            <a href="javascript:void(0)" class="line">メニューⅱ</a>
+		            <a href="javascript:void(0)" class="end">メニューⅲ</a>
+		        </dd>
+				     -->
+		        <!-- menu3 -/->
+		        <dt class="direct"><a href="javascript:void(0)">&nbsp;カテゴリⅢ</a>
+						-->
+		        <!-- menu4 -/->
+		        <dt>
+		            <a href="javascript:void(0)" class="closer">&nbsp;カテゴリⅣ</a>
+		        </dt>
+		        <dd class="opener" style="display:none;">
+		            <a href="javascript:void(0)" class="line">メニューⅰ</a>
+		            <a href="javascript:void(0)" class="line">メニューⅱ</a>
+		            <a href="javascript:void(0)" class="end">メニューⅲ</a>
+		        </dd>
+					  -->
+		        <!-- menu5 -/->
+		        <dt class="direct"><a href="javascript:void(0)">&nbsp;カテゴリⅤ</a>
+						-->
+		        <!-- menu6 -/->
+		        <dt class="direct"><a href="javascript:void(0)">&nbsp;カテゴリⅥ</a>
+						-->
+		    </dl>
+		</div>
+	</div>
 	<div class="middle-east"></div>
 
-</div> 
+</div>
 
 <div class="ui-layout-north" id="header">
   （　´∀｀） MONAsk -AskMona WebView-
@@ -127,7 +179,7 @@
     <input type="button" value="Log In" id="user-login" />
   </div>
 </div>
-<div class="ui-layout-south" id="footer">Outer South</div>
+<div class="ui-layout-south" id="footer">MONAsk Loaded...?</div>
 
 </body>
 </html>

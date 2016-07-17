@@ -1,11 +1,11 @@
-/* ¸�޵ؼ��ق��� */
+/* ﾂｸﾀﾞｵﾘｼﾞﾅﾙから */
 
 	.subjectWin-menu,
 	.threadWin-menu {
-		/* center pane that are 'containers' for a nested layout */ 
+		/* center pane that are 'containers' for a nested layout */
 		padding: 2px;
 		border: 0;
-	} 
+	}
 
 	.menu-buttons {
 	                float: right;
@@ -13,21 +13,22 @@
 
 	.subjectWin-view,
 	.threadWin-view {
-		/* center pane that are 'containers' for a nested layout */ 
+		/* center pane that are 'containers' for a nested layout */
 		padding: 0 0 0 0;
 		background: #efefef;
-	} 
+	}
 
 	.subjectWin-view {
-		/* center pane that are 'containers' for a nested layout */ 
+		/* center pane that are 'containers' for a nested layout */
 		border: 0;
 		background: #86ce86;
-	} 
+	}
 
 	#header {
 		color: white;
+		line-height: 25px;
 		background: #22b14c;
-		} 
+		}
 
 	.cell-textRight {
 	                text-align: right;
@@ -37,6 +38,57 @@
                 resize: none;
 		width: 100%;
 		height: calc(100% - 2em);
-	} 
+	}
 
-/* ¸�޵ؼ��ق܂� */
+	.flex {
+		width: 100%;
+		height: 100%;
+	    display: -webkit-flexbox;
+	    display: -moz-flexbox;
+	    display: -ms-flexbox;
+	    display: -o-flexbox;
+	    display: flex;
+	}
+
+	.menu-history {
+		flex-grow: 1;
+	}
+	.menu-history > select {
+		width: 100%;
+		height: 100%;
+	}
+
+	.anchorTooltip {
+		max-width: 100% !important;
+		max-height: 95% !important;
+		padding-right: 20px !important;
+		overflow: auto !important;
+	}
+/* ﾂｸﾀﾞｵﾘｼﾞﾅﾙまで */
+
+
+/** http://phpjavascriptroom.com/?t=js&p=tips_node より **/
+/* メニュー全体 */
+div#bbsmenu, div#bbsmenu * { margin:0; padding:0; }
+div#bbsmenu { margin:2px; width:calc(100% - 4px); }
+div#bbsmenu dl { list-style:none; border-top:1px solid silver; width:100%; margin:0; padding:0; }
+/* カテゴリ名 */
+div#bbsmenu dt { border-width:1px; border-style:none solid solid solid; border-color:silver; }
+div#bbsmenu dt > a { padding:5px 0; display:block; color:black; text-decoration:none; background:#eee url(./images/arrowinbox.gif) no-repeat right center; width:100%; }
+/* カテゴリメニュー */
+div#bbsmenu dd { display:none; border-width:1px; border-style:none solid solid solid; border-color:silver; padding:0 0 0 15px; }
+div#bbsmenu dd >  a { text-decoration:none; display:block; background:url(./images/arrow.gif) no-repeat left center; padding:2px 0 2px 10px; color:black; }
+div#bbsmenu dd >  a.closer { text-decoration:none; display:block; background:url(./images/folder01-001.gif) no-repeat left center; padding:2px 0 2px 20px; color:black; }
+div#bbsmenu dd a:not(:last-child), div#bbsmenu dd a:not(:last-child):hover { border-bottom:1px dotted silver; }
+div#bbsmenu dd a:last-child, div#bbsmenu dd a:last-child:hover { padding-bottom:1px; }
+/* ダイレクトリンク */
+div#bbsmenu dt.direct a { display:block; color:#000; background:#fff url(./images/arrow.gif) no-repeat right center; }
+div#bbsmenu dt.direct a:hover { color:#fff; background:orange url(./images/arrow_wh.gif) no-repeat right center; }
+/* カテゴリメニュー(深) */
+div#bbsmenu ul { display:none; border-width:1px; border-style:none solid solid solid; border-color:silver; }
+div#bbsmenu ul >  li { list-style-type:none; padding:0 0 0 5px; color:black; }
+div#bbsmenu ul  a { text-decoration:none; display:block; background:url(./images/arrow.gif) no-repeat left center; padding:2px 0 2px 15px; color:black; }
+/*div#bbsmenu ul a:hover { color:#fff; background:orange url(./images/arrow_wh.gif) no-repeat left center; }*/
+div#bbsmenu ul a:not(:last-child), div#bbsmenu ul a:not(:last-child):hover { border-bottom:1px dotted silver; }
+div#bbsmenu ul a:last-child, div#bbsmenu ul a:last-child:hover { padding-bottom:1px; }
+/** おわり **/
