@@ -1,103 +1,446 @@
 // Web Workers に対応しているか
 if(!window.Worker) alert("お使いのブラウザは Web Workers に対応していません。ブラウザを更新するか、対応してるﾔｼに乗り換えてください。。。");
 
+var Core = {
+  bbsList: {},
 
-//初期値
-window.subjectReqCount = 0;
-window.threadReqCount = 0;
-window.BBS = {}; // 掲示板スクリプト用
-window.BTN = {}; // ボタンonclick
+  history: {
+    board: [],
+    thread: [],
+    reload: function(){
+      var that = this;
+      (function(){
+        var dom = $('#bbs-history');
+        arr = that.board;
+        dom.empty();
+        for(i=0;i<arr.length;i++){
+          dom.append('<option value="' + i + '">□' + arr[i].title + '</option>');
+        }
+      })();
+      (function(){
+        var dom = $('#thread-history');
+        arr = that.thread;
+        dom.empty();
+        for(i=0;i<arr.length;i++){
+          dom.append('<option value="' + i + '">□' + arr[i].title + '</option>');
+        }      })();
+    }
+  },
+
+  bbsMenu: {
+    render: function() {
+      bbsmenu = $("#bbsmenu");
+
+      var insert = $("<dl>");
+      $.each(Core.bbsList, function(site, obj){
+        var list = obj._boardList;
+        var name = obj._siteTitle;
+        var closerElem = $('<dt><a href="javascript:void(0)" class="closer">&nbsp;' + name + '</a></dt>');
+        closerElem.appendTo(insert);
+        var openerElem = $('<dd class="opener" style="display:none;"></dd>');
+        console.log(obj);
+        $.each(list, function(board, obj){
+          var name = obj.name;
+          var elem = $('<a href="javascript:void(0)" class="link" data-site="' + site + '" data-board="' + board + '">' + name + '</a>');
+          elem.appendTo(openerElem);
+        });
+        openerElem.appendTo(insert);
+      });
+
+      bbsmenu.empty();
+      insert.appendTo(bbsmenu);
+
+      // 板一覧ツリー処理。 http://phpjavascriptroom.com/?t=js&p=tips_node をカスタマイズ
+      /* 子メニューの表示・非表示切替 */
+      $("#bbsmenu > dl > dt > a.closer").click(function(){
+          var parent=$(this);
+          var index = $("#bbsmenu > dl > dt > a.closer").index(this);
+          var child=$("#bbsmenu > dl > dd").eq(index);
+          if (child.css('display') == "none") {
+            child.css({
+              display:"block",
+              backgroundColor:"white"
+            });
+            parent.css({
+              backgroundColor:"orange",
+              color:"white"
+            });
+          } else {
+              child.css('display', "none");
+              parent.css({
+                backgroundColor:"#eeeeee",
+                color:"black"
+              });
+          }
+      });
+
+      /* 子メニューの表示・非表示切替 */
+      $("#bbsmenu > dl > dd > a.closer").click(function(){
+          var parent=$(this);
+          var index = $("#bbsmenu > dl > dd > a.closer").index(this);
+          var child=$("#bbsmenu > dl > dd > ul").eq(index);
+          if (child.css('display') == "none") {
+            child.css({
+              display:"block",
+              backgroundColor:"white"
+            });
+            parent.css({
+              backgroundColor:"orange",
+              color:"white"
+            });
+          } else {
+              child.css('display', "none");
+              parent.css({
+                backgroundColor:"white",
+                color:"black"
+              });
+          }
+      });
+      // 以上、板一覧ツリー処理でした。
+
+      $("#bbsmenu a.link").click(function(){
+        Core.bbsList[this.dataset.site].getBoardObject(this.dataset.board).load();
+      });
+    }
+  },
+
+  boardPane: {
+    active: {}
+  },
+
+  threadPane: {
+    active: {},
+    displayHtml: function (html) {
+      $('.threadWin-view').html(html);
+    },
+    scrollTop: function (top) {
+      $('.threadWin-view').scrollTop(top);
+    },
+  },
+
+  log: function (str) {
+    $("#footer").html(str);
+  }
+}
+
+class Template_Site {
+  constructor(args) {
+    this._args = args;
+    this.boards = {};
+    this.init(args);
+    Core.bbsList[this._site] = this;
+  }
+
+  get forBoard() {return {site:this._site, siteTitle:this._siteTitle} }
+
+  init(args) {
+    this._site = "site4ex";
+    this._siteTitle = 'Example Site';
+  }
+
+  render() {
+    Core.bbsMenu.render();
+  }
+
+  getBoardObject(board) {
+    return (board in this.boards) ? this.boards[board] : this.newBoardObject(board);
+  }
+  newBoardObject(board) {}
+}
+
+class Template_Board {
+  constructor(args, siteObj) {
+    console.log(args);
+    this._args = args;
+    this._siteObj = siteObj;
+    this._siteDesc = this._siteObj.forBoard;
+    this._site = this._siteDesc.site;
+    this._siteTitle = this._siteDesc.siteTitle;
+    this._board = this._args.board;
+    this._boardTitle = this._args.name;
+    siteObj.boards[this._board] = this;
+    this.threads = [];
+    this.init(args);
+  }
+
+  init(args) {
+    this._columns = {};
+  }
+
+  get forThread() {return {site:this._site, siteTitle:this._siteTitle, siteObj:this._siteObj, board:this._board, boardTitle:this._boardTitle} }
+
+  load(reload) {}
+
+  render() {
+    var that = this;
+    if (that._subjects.length === 0) that.load();
+    var subjects = that._subjects.concat();
+    var columns = that._columns;
+    var options = {
+      enableCellNavigation: false,
+      enableColumnReorder: false,
+      multiColumnSort: false
+    };
+    window.grid = new Slick.Grid(".subjectWin-view", subjects, columns, options);
+    Core.log("（ ´∀｀）Thread list loaded!");
+
+    grid.onClick.subscribe(function(e, args) {
+      var item = args.row;
+      that.getThreadObject(subjects[item], true).load();
+    });
+
+    grid.onSort.subscribe(function (e, args) {
+      var field = args.sortCol.field;
+      subjects.sort(function (a, b) {
+        var result =
+          a[field] > b[field] ? 1 :
+          (a[field] < b[field] ? -1 : 0);
+        return args.sortAsc ? result : -result;
+      });
+      grid.invalidate();
+      grid.setData(subjects);
+      grid.render();
+     });
+
+      $('.subjectWin-view').css('overflow-y','auto');
+  }
+
+  addToHistory(remove) { // 履歴に追加／既存なら浮上
+    var site = this._site;
+    var board = this._board;
+    var title = this._boardTitle;
+    var opts = {};
+    Core.history.board = Core.history.board.filter(function(v){ //一旦該当項目を削除（それ以外を抽出）
+      return !(v.site == site && v.board === board);
+    });
+    if (!remove) Core.history.board.unshift({site:site, board:board, title:title, opts:opts});
+    localStorage.setItem('monask:history:board', JSON.stringify(Core.history.board));
+    Core.history.reload();
+    $('#bbs-history').val("0");
+    return Core.history.board;
+  }
+
+  deleteFromHistory() {
+    return this.addToHistory(true);
+  }
+
+  activate() {
+    Core.boardPane.active = this;
+    return this.addToHistory();
+  }
+  get isActive() {
+    return Core.boardPane.active === this;
+  }
+
+  getThreadObject(data, isSubjectObj) {}
+  newThreadObject(key) {}
+}
+
+class Template_Thread {
+  constructor(args, boardObj) {
+    this._args = args;
+    this._boardObj = boardObj;
+    this._boardDesc = this._boardObj.forThread;
+    this._siteObj = this._boardDesc.siteObj;
+    this._site = this._boardDesc.site;
+    this._siteTitle = this._boardDesc.siteTitle;
+    this._board = this._boardDesc.board;
+    this._boardTitle = this._boardDesc.boardTitle;
+    this._thread = this._args.thread;
+    this._threadTitle = this._args.name || "unknown";
+    this._responses = [];
+    boardObj.threads[this._thread] = this;
+    this.init(args);
+    console.log(this);
+  }
+
+  init(args) {
+  }
+
+  get forRenderer() {return {site:this._site, siteTitle:this._siteTitle, board:this._boardTitle, boardTitle:this._boardTitle, thread:this._thread, threadTitle:this._threadTitle} }
+
+  load(reload) {}
+
+  render(reload) {
+    var that = this;
+    if (that._isWorking || !that.isActive) return;
+    if (this._responses.length === 0) that.load();
+    that.activate();
+
+    var responses = that._responses.concat();
+
+    that._worker = new Worker('./threadRender.worker.js');
+    Core.log("（ ・～・）Responses RENDERING... : "  + that._threadTitle);
+
+    that._worker.addEventListener('message', function(e) {
+      delete that._worker;
+      Core.threadPane.displayHtml('<div id="th_title" class="title">' + that._threadTitle + '</div>' + e.data + '<div class="title" style="margin-top: 10px;">' + that._threadTitle + '</div>')
+      if (!reload) Core.threadPane.scrollTop(0);
+      Core.log("（ ・∀・）Responses loaded! : "  + that._threadTitle);
+
+      // クイック送金ツールチップの準備
+      $('.send').qtip({
+        position: {
+          my: 'left center',  // Position my top left...
+          at: 'center right', // at the bottom right of...
+          viewport: $(window),
+        },
+        hide: {
+            fixed: true,
+            delay: 300
+        }
+      });
+
+      //安価ポップアップの準備
+      $(document).on('mouseover', 'a.anchor', function(event) {
+          $(this).qtip({
+            content: {
+              text: function(event, api) {
+                (function(){
+                  var ankaStr = api.elements.target.text().slice(2);
+                  responses = that._responses;
+                  var worker = new Worker('./threadRender.worker.js');
+                  worker.addEventListener('message', function(e) {
+                    api.set('content.text', e.data); // サンプルをコピペしたままなので変数見つからんと怒られた。。。
+                  }, false);
+                  worker.postMessage({responses:responses, threadDesc:that.forRenderer, ankaStr:ankaStr}); // ワーカーにデータを送信（HTML組立処理開始）
+                })();
+                return 'Loading...'; // Set some initial text
+                 }
+            },
+            position: {
+              my: 'center left',  // Position my top left...
+              at: 'center right', // at the bottom right of...
+              viewport: $(window),
+              effect: false,
+              adjust: {
+                method: 'shift'
+              }
+            },
+            show: {
+               event: event.type,
+               ready: true,
+               effect: false
+            },
+            hide: {
+              fixed: true,
+              delay: 300
+            },
+            style: { 'classes': 'anchorTooltip' }
+          });
+      });
+
+      // 書き込みウィンドウの準備
+      if(!("postWindow" in that)) {
+        var dlgHtml = '<div id="postWin-AM-' + that._thread + '" >'
+                    +   '<input type="button" value="書き込み" onclick="BBS.askmona.post(' + that._threadTitle + ', \'' + that._threadTitle + '\')" />'
+                    +   '<input type="checkbox" class="sage" value="sage">sage'
+                    +   '<textarea rows="4" cols="40" class="postText"></textarea><br>'
+                    + '</div>';
+        that.postWindow = $(dlgHtml)
+         .dialog({
+            title: '書込: ' + that._threadTitle,
+            width:600,
+            height:300,
+            autoOpen: false
+          })
+         .css({"background":"white", "font-size":"14px"});
+      }
+
+      // 送金ウィンドウの準備
+      if(!("sendWindow" in that)) {
+        var dlgHtml = '<div id="sendWin-AM-' + that._thread + '" >'
+                    + '  <input type="button" value="送金する" onclick="" />' //BBS.askmona.sendToRes(' + th_obj.t_id + ', 0, 0)
+                    + '  ﾚｽ:<input type="text" class="res-id" value="0" size="6" maxlength="4">　'
+                    + '  額:<input type="text" class="amount" value="0">　'
+                    + '  <input type="checkbox" class="anonymous" value="anonymous">匿名　'
+                    + '  <input type="checkbox" class="sage" value="sage">sage'
+                    + '  <textarea rows="4" cols="40" class="postText"></textarea><br>'
+                    + '</div>';
+        that.sendWindow = $(dlgHtml)
+         .dialog({
+            title: '送金: ' + that._threadTitle,
+            width:600,
+            height:300,
+            autoOpen: false
+          })
+         .css({"background":"white", "font-size":"14px"});
+      }
+    }, false);
+
+    that._worker.postMessage({responses:responses, threadDesc:that.forRenderer}); // ワーカーにデータを送信（HTML組立処理開始）
+  }
+
+  addToHistory(remove) { // 履歴に追加／既存なら浮上
+    var site = this._site;
+    var board = this._board;
+    var thread = this._thread;
+    var title = this._threadTitle;
+    var opts = {};
+    Core.history.thread = Core.history.thread.filter(function(v){ //一旦該当項目を削除（それ以外を抽出）
+      return !(v.site === site && v.board === board, v.thread === thread);
+    });
+    if (!remove) Core.history.thread.unshift({site:site, board:board, thread:thread, title:title, opts:opts});
+    localStorage.setItem('monask:history:thread', JSON.stringify(Core.history.thread));
+    Core.history.reload();
+    $('#thread-history').val("0");
+    return Core.history.thread;
+  }
+
+  deleteFromHistory() {
+    return this.addToHistory(true);
+  }
+
+  activate() {
+    Core.threadPane.active = this;
+    return this.addToHistory();
+  }
+  isActive() {
+    return Core.threadPane.active === this;
+  }
+}
 
 $(function(){
+  Core.boardPane.dom = $('.subjectWin-view').get(0);
+  Core.threadPane.dom = $('.threadWin-view').get(0);
 
-  window.nowWork = 0;
+  Core.bbsMenu.render();
 
-  // 板一覧ツリー処理。 http://phpjavascriptroom.com/?t=js&p=tips_node をカスタマイズ
-  /* 子メニューの表示・非表示切替 */
-  $("#bbsmenu > dl > dt > a.closer").click(function(){
-      var parent=$(this);
-      var index = $("#bbsmenu > dl > dt > a.closer").index(this);
-      var child=$("#bbsmenu > dl > dd").eq(index);
-      if (child.css('display') == "none") {
-        child.css({
-          display:"block",
-          backgroundColor:"white"
-        });
-        parent.css({
-          backgroundColor:"orange",
-          color:"white"
-        });
-      } else {
-          child.css('display', "none");
-          parent.css({
-            backgroundColor:"#eeeeee",
-            color:"black"
-          });
-      }
-  });
-
-  /* 子メニューの表示・非表示切替 */
-  $("#bbsmenu > dl > dd > a.closer").click(function(){
-      var parent=$(this);
-      var index = $("#bbsmenu > dl > dd > a.closer").index(this);
-      var child=$("#bbsmenu > dl > dd > ul").eq(index);
-      if (child.css('display') == "none") {
-        child.css({
-          display:"block",
-          backgroundColor:"white"
-        });
-        parent.css({
-          backgroundColor:"orange",
-          color:"white"
-        });
-      } else {
-          child.css('display', "none");
-          parent.css({
-            backgroundColor:"white",
-            color:"black"
-          });
-      }
-  });
-  // 以上、板一覧ツリー処理でした。
-
-  // モジュール化の一環、板一覧からのopenコマンド
-  $("#bbsmenu a.link").click(function(){
-    var param = JSON.parse(this.dataset.param);
-    BBS[ this.dataset.bbs ].open(param);
-  });
-
-  // 板履歴の読み込み、設定
-  $('#bbs-history').change(function(){ // 板履歴で選択された際の処理
+     // 板履歴の読み込み、設定
+  $('#bbs-history').change(function(undefined){ // 板履歴で選択された際の処理
     var selected = $('#bbs-history').val();
-    var arr = API.subjectWin.history.listArr[selected];
-    BBS[ arr.bbs ].open(arr.param);
+    var arr = Core.history.board[selected];
+    if (arr !== undefined) Core.bbsList[arr.site].getBoardObject(arr.board).load();
   });
-  var subjectHistory = localStorage.getItem('monask:history:bbs');
+  var subjectHistory = localStorage.getItem('monask:history:board');
   if(subjectHistory !== null) {
-    API.subjectWin.history.listArr = JSON.parse(subjectHistory);
-    API.subjectWin.history.update();
+    Core.history.board = JSON.parse(subjectHistory);
+    Core.history.reload();
     $('#bbs-history').change();
   }
   // スレ履歴の読み込み、設定
-  $('#thread-history').change(function(){ // 板履歴で選択された際の処理
+  $('#thread-history').change(function(undefined){ // 板履歴で選択された際の処理
     var selected = $('#thread-history').val();
-    var arr = API.threadWin.history.listArr[selected];
-    BBS[ arr.bbs ].open(arr.param);
+    var arr = Core.history.thread[selected];
+    if (arr !== undefined) Core.bbsList[arr.site].getBoardObject(arr.board).getThreadObject(arr.thread).load();
   });
   var threadHistory = localStorage.getItem('monask:history:thread');
   if(threadHistory !== null) {
-    API.threadWin.history.listArr = JSON.parse(threadHistory);
-    API.threadWin.history.update();
+    Core.history.thread = JSON.parse(threadHistory);
+    Core.history.reload();
     $('#thread-history').change();
   }
+
   // Ask Mona再ログイン処理
   var u_id = localStorage.getItem("askMona:u_id");
   var secretkey = localStorage.getItem("askMona:secretkey");
   if(u_id !== null && secretkey !== null){ // ２つとも存在した場合
-    $.askmona.myprof({app_id:BBS.askmona.app_id,app_secretkey:BBS.askmona.app_secretkey, u_id:u_id, secretkey:secretkey}, {}, function(result){
+    var askMona = Core.bbsList['askMona'];
+    console.log(window.aI={app_id:askMona.app_id,app_secretkey:askMona.app_secretkey, u_id:u_id, secretkey:secretkey});
+    $.askmona.myprof({app_id:askMona.app_id,app_secretkey:askMona.app_secretkey, u_id:u_id, secretkey:secretkey}, {}, function(result){
       if (result.status === 1) {
-        BBS.askmona.u_id = u_id;
-        BBS.askmona.secretkey = secretkey;
+        askMona.u_id = u_id;
+        askMona.secretkey = secretkey;
         $("#login-status").html(result.u_name + result.u_dan + 'さん');
       }
       else alert("前回までの情報で認証できませんでした。ログインし直してください。\n" + result.error);
@@ -116,10 +459,11 @@ $(function(){
         return -1;
       }
       if(!(typeof user === 'object' && 'u_id' in user && 'secretkey' in user)){alert('内容が正しくありません。もう一度やり直してください。'); return -1;}
-      $.askmona.myprof({app_id:BBS.askmona.app_id,app_secretkey:BBS.askmona.app_secretkey, u_id:user.u_id, secretkey:user.secretkey}, {}, function(result){
+      var askMona = Core.bbsList['askMona'];
+      $.askmona.myprof({app_id:askMona.app_id,app_secretkey:askMona.app_secretkey, u_id:user.u_id, secretkey:user.secretkey}, {}, function(result){
         if (result.status === 1) {
-          BBS.askmona.u_id = user.u_id;
-          BBS.askmona.secretkey = user.secretkey;
+          askMona.u_id = user.u_id;
+          askMona.secretkey = user.secretkey;
           localStorage.setItem("askMona:u_id", user.u_id);
           localStorage.setItem("askMona:secretkey", user.secretkey);
           $("#login-status").html(result.u_name + result.u_dan + 'さん');
@@ -158,67 +502,4 @@ Date.prototype.toNormalString = function(){
         ( '0' + (this.getDate()) ).slice( -2 ) + ' ' +
         ( '0' + this.toLocaleTimeString() ).slice( -8 )
     );
-}
-
-API = {
-  subjectWin: {
-    history: {
-      listArr: [],
-      add: function(bbs, param, unique, title) { // 履歴に追加／既存なら浮上
-        this.listArr = this.listArr.filter(function(v){
-          return !(v.bbs == bbs && v.unique === unique);
-        });
-        if (typeof(title) !== "undefined") this.listArr.unshift({bbs:bbs, param:param, unique:unique, title:title});
-        localStorage.setItem('monask:history:bbs', JSON.stringify(this.listArr));
-        this.update();
-        $('#bbs-history').val("0");
-        return this.listArr;
-      },
-      delete: function(bbs, unique) {
-        this.add(bbs, {}, unique);
-      },
-      update: function(){        var dom = $('#bbs-history');
-        arr = this.listArr;
-        dom.empty();
-        for(i=0;i<arr.length;i++){
-          dom.append('<option value="' + i + '">□' + arr[i].title + '</option>');
-        }
-      }
-    }
-  },
-  threadWin: {
-    displayHtml: function (html) {
-      $('.threadWin-view').html(html);
-    },
-    scrollTop: function (top) {
-      $('.threadWin-view').scrollTop(top);
-    },
-    history: {
-      listArr: [],
-      add: function(bbs, param, unique, title) { // 履歴に追加／既存なら浮上
-        this.listArr = this.listArr.filter(function(v){
-          return !(v.bbs == bbs && v.unique === unique);
-        });
-        if (typeof(title) !== "undefined") this.listArr.unshift({bbs:bbs, param:param, unique:unique, title:title});
-        localStorage.setItem('monask:history:thread', JSON.stringify(this.listArr));
-        this.update();
-        $('#thread-history').val("0");
-        return this.listArr;
-      },
-      delete: function(bbs, unique) {
-        this.add(bbs, {}, unique);
-      },
-      update: function(){
-        var dom = $('#thread-history');
-        arr = this.listArr;
-        dom.empty();
-        for(i=0;i<arr.length;i++){
-          dom.append('<option value="' + i + '">□' + arr[i].title + '</option>');
-        }
-      }
-    }
-  },
-  status: function (str) {
-    $("#footer").html(str);
-  }
 }

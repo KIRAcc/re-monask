@@ -60,7 +60,7 @@ jQuery.askmona = {
   unixtime:function(str){
     var objDate = new Date(str * 1000);
     var nowDate = new Date();
-    myHour = Math.floor((nowDate.getTime()-objDate.getTime()) / (1000*60*60)) + 1; //Œ»İŠÔ‚Æ‚Ì·
+    myHour = Math.floor((nowDate.getTime()-objDate.getTime()) / (1000*60*60)) + 1; //ï¿½ï¿½ï¿½İï¿½ï¿½Ô‚Æ‚Ìï¿½
     var year = objDate.getFullYear();
     var month = objDate.getMonth() + 1;
     var date = objDate.getDate();

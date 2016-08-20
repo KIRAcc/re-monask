@@ -1,5 +1,16 @@
 /* ﾂｸﾀﾞｵﾘｼﾞﾅﾙから */
 
+  .outer-header,
+  .outer-header > *,
+	.outer-footer {
+		padding: 0;
+	}
+  .outer-header,
+  .outer-header > .header-menuBar,
+	.outer-footer {
+    border: 0;
+	}
+
 	.subjectWin-menu,
 	.threadWin-menu {
 		/* center pane that are 'containers' for a nested layout */

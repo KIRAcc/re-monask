@@ -10,22 +10,26 @@
 	<link rel="stylesheet" href="./css/slick.grid.css">
 	<link rel="stylesheet" href="./css/jquery.qtip.min.css">
 	<link rel="stylesheet" href="./css/slick.mycustom.css">
+	<link rel="stylesheet" href="./css/dropdown.css">
 
 
 	<script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="//code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
 	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="js/jquery.layout_and_plugins.min.js"></script>
 
 	<script language="JavaScript" type="text/javascript" src="./js/jquery.event.drag-2.2.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/slick.core.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/slick.formatters.js"></script>
+	<script language="JavaScript" type="text/javascript" src="./js/slick.dataview.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/slick.grid.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./js/jquery.qtip.min.js"></script>
+	<script language="JavaScript" type="text/javascript" src="./js/dropdown.js"></script>
 	<!--<script language="JavaScript" type="text/javascript" src="./js/imagesloaded.pkg.min.js"></script>-->
 	<script language="JavaScript" type="text/javascript" src="./main.js"></script>
-	<script language="JavaScript" type="text/javascript" src="./js/sha256.js"></script>
-	<script language="JavaScript" type="text/javascript" src="./js/jquery.askmona.js"></script>
 
+	<script language="JavaScript" type="text/javascript" src="./site_scripts/askmona/sha256.js"></script>
+	<script language="JavaScript" type="text/javascript" src="./site_scripts/askmona/jquery.askmona.js"></script>
 	<script language="JavaScript" type="text/javascript" src="./site_scripts/askmona/main.site.js"></script>
 
 	<script type="text/javascript">
@@ -36,9 +40,18 @@
 
 		outerLayout = $('body').layout({
 			center__paneSelector:	".outer-center"
+		,	north__paneSelector:	".outer-header"
+		,	south__paneSelector:	".outer-footer"
 		,	spacing_open:			0 // ALL panes
 		,	spacing_closed:			4 // ALL panes
 		,	center__onresize:		"middleLayout.resizeAll"
+		});
+
+		headerLayout = $('div.outer-header').layout({
+			center__paneSelector:	".header-urlBar"
+		,	north__paneSelector:		".header-menuBar"
+		,	spacing_open:			0  // ALL panes
+		,	spacing_closed:			4  // ALL panes
 		});
 
 		middleLayout = $('div.outer-center').layout({
@@ -99,7 +112,7 @@
 							<select id="bbs-history" style="width:100%;"></select>
 						</div>
 						<div class="menu-buttons" style="z-index:1;">
-	            <input type="button" value="更新" id="subject-refresh" onclick="BTN.subjectWin.reload()" />
+	            <input type="button" value="新" id="subject-refresh" onclick="Core.boardPane.active.load(true)" />
 	          </div>
 					</div>
         </div>
@@ -113,7 +126,7 @@
 							<select id="thread-history" style="width:100%;"></select>
 						</div>
 						<div class="menu-buttons" id="subject-btns">
-							<input type="button" value="新" onclick="BTN.threadWin.reload()" /><input type="button" value="書" onclick="BTN.threadWin.openPostWin()" />
+							<input type="button" value="新" onclick="Core.threadPane.active.load(true)" /><input type="button" value="書" onclick="Core.threadPane.active.postWindow.dialog('open')" />
 	          </div>
 					</div>
         </div>
@@ -121,16 +134,16 @@
       </div>
     </div>
 
-	<div class="middle-west">
-		<div id="bbsmenu">
+	<div class="middle-west" style="border:0;">
+		<div id="bbsmenu"><!--
 		    <dl>
-		        <!-- menu1 -->
+		        <!-- menu1 -/->
 		        <dt>
 		            <a href="javascript:void(0)" class="closer">&nbsp;Ask Mona</a>
 		        </dt>
 		        <dd class="opener" style="display:none;">
-		            <a href="javascript:void(0)" class="link" data-bbs="askmona" data-param="{&quot;cmd&quot;:&quot;listTopics&quot;}">トピック一覧</a>
-		            <a href="javascript:void(0)" class="link" data-bbs="askmona" data-param="{&quot;cmd&quot;:&quot;listFavs&quot;}">お気に入り</a>
+		            <a href="javascript:void(0)" class="link" data-site="askMona" data-board="all">トピック一覧</a>
+		            <a href="javascript:void(0)" class="link" data-site="askMona" data-board="favs">お気に入り</a>
 		        </dd>
 		        <!-- menu2 -/->
 		        <dt>
@@ -164,22 +177,26 @@
 						-->
 		        <!-- menu6 -/->
 		        <dt class="direct"><a href="javascript:void(0)">&nbsp;カテゴリⅥ</a>
-						-->
-		    </dl>
+						-/->
+		    </dl>-->
 		</div>
 	</div>
 	<div class="middle-east"></div>
 
 </div>
 
-<div class="ui-layout-north" id="header">
-  （　´∀｀） MONAsk -AskMona WebView-
-  <div class="menu-buttons">
-    <span id="login-status">未ログイン</span>
-    <input type="button" value="Log In" id="user-login" />
-  </div>
+<div class="outer-header">
+	<div class="header-menuBar" id="header">
+		（　´∀｀） MONAsk -AskMona WebView-
+	</div>
+	<div class="header-urlBar">
+		<div class="menu-buttons">
+	    <span id="login-status">未ログイン</span>
+	    <input type="button" value="Log In" id="user-login" />
+	  </div>
+	</div>
 </div>
-<div class="ui-layout-south" id="footer">MONAsk Loaded...?</div>
+<div class="outer-footer" id="footer">MONAsk Loaded...?</div>
 
 </body>
 </html>
