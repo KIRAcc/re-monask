@@ -119,7 +119,14 @@ var Core = {
   },
 
   log: function (str) {
-    $("#footer").html(str);
+    $("#logView").prepend('<div class="elem">' + str + '</div>');
+    $('#logView').animate({scrollTop:0}, 'fast');
+  },
+
+  gridClickFunc: function(e, args) {
+    that = Core.boardPane.active;
+    var item = dataView.getItem(args.row).rank - 1;
+    that.getThreadObject(that._subjects[item], true).load();
   }
 }
 
@@ -174,38 +181,70 @@ class Template_Board {
   render() {
     var that = this;
     if (that._subjects.length === 0) that.load();
-    var subjects = that._subjects.concat();
+    var subjects = that._subjects;
     var columns = that._columns;
-    var options = {
-      enableCellNavigation: false,
-      enableColumnReorder: false,
-      multiColumnSort: false
-    };
-    window.grid = new Slick.Grid(".subjectWin-view", subjects, columns, options);
     Core.log("（ ´∀｀）Thread list loaded!");
 
-    grid.onClick.subscribe(function(e, args) {
-      var item = args.row;
-      that.getThreadObject(subjects[item], true).load();
-    });
+    grid.onClick.unsubscribe(Core.gridClickFunc); // すでに登録されているクリックイベントを削除
+    grid.onClick.subscribe(Core.gridClickFunc); // クリックするとスレを開くイベントを登録
 
     grid.onSort.subscribe(function (e, args) {
-      var field = args.sortCol.field;
-      subjects.sort(function (a, b) {
-        var result =
-          a[field] > b[field] ? 1 :
-          (a[field] < b[field] ? -1 : 0);
-        return args.sortAsc ? result : -result;
+      var cols = args.sortCols;
+      dataView.sort(function (dataRow1, dataRow2) {
+        for (var i = 0, l = cols.length; i < l; i++) {
+          var field = cols[i].sortCol.field;
+          var sign = cols[i].sortAsc ? 1 : -1;
+          var value1 = dataRow1[field], value2 = dataRow2[field];
+          var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * sign;
+          if (result != 0) {
+            return result;
+          }
+        }
+        return 0;
       });
-      grid.invalidate();
-      grid.setData(subjects);
-      grid.render();
-     });
+    });
 
-      $('.subjectWin-view').css('overflow-y','auto');
+    dataView.onRowCountChanged.subscribe(function (e, args) {
+      grid.updateRowCount();
+      grid.render();
+    });
+
+    dataView.onRowsChanged.subscribe(function (e, args) {
+      grid.invalidateRows(args.rows);
+      grid.render();
+    });
+
+    var filterStr = '';
+    var filter = function(item) {
+      if ('title' !== undefined && filterStr !== "") {
+        //var c = grid.getColumns()[grid.getColumnIndex(columnId)];
+        var val = item['title'];
+        if (val === undefined || val.indexOf(filterStr) === -1) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    $("input#subject-filter").japaneseInputChange(function(){
+      filterStr = $.trim($(this).val());
+      dataView.refresh();
+    });
+
+    grid.setColumns(columns);
+    dataView.beginUpdate();
+    dataView.setItems(subjects.concat(), 'rank');
+    dataView.refresh();
+    dataView.setFilter(filter);
+    dataView.endUpdate();
+    grid.invalidate();
+    grid.render();
+    grid.invalidateAllRows();
+    setTimeout(grid.resizeCanvas, 0);
+    $(".slick-viewport").scrollTop(0);
   }
 
-  addToHistory(remove) { // 履歴に追加／既存なら浮上
+  addToHistory(remove) { // 履歴に追加／既存なら浮上し、画面に反映。removeは文字通りtrueを渡すと履歴から消える
     var site = this._site;
     var board = this._board;
     var title = this._boardTitle;
@@ -213,18 +252,18 @@ class Template_Board {
     Core.history.board = Core.history.board.filter(function(v){ //一旦該当項目を削除（それ以外を抽出）
       return !(v.site == site && v.board === board);
     });
-    if (!remove) Core.history.board.unshift({site:site, board:board, title:title, opts:opts});
-    localStorage.setItem('monask:history:board', JSON.stringify(Core.history.board));
-    Core.history.reload();
-    $('#bbs-history').val("0");
+    if (!remove) Core.history.board.unshift({site:site, board:board, title:title, opts:opts}); // そしてここで追加する。もともと存在していたのなら↑で削除されるし、remove==trueなら追加されないので事実上の削除となるのだ
+    localStorage.setItem('monask:history:board', JSON.stringify(Core.history.board)); // そしてlocalStorageに保存する
+    Core.history.reload(); // 画面上に反映
+    if (!remove) $('#bbs-history').val("0"); // 画面上で先頭要素にフォーカスする
     return Core.history.board;
   }
 
-  deleteFromHistory() {
+  deleteFromHistory() { // addToHistoryの引数removeをtrue固定にしただけの実質エイリアス
     return this.addToHistory(true);
   }
 
-  activate() {
+  activate() { // 今開いている板として登録
     Core.boardPane.active = this;
     return this.addToHistory();
   }
@@ -251,7 +290,6 @@ class Template_Thread {
     this._responses = [];
     boardObj.threads[this._thread] = this;
     this.init(args);
-    console.log(this);
   }
 
   init(args) {
@@ -274,8 +312,10 @@ class Template_Thread {
 
     that._worker.addEventListener('message', function(e) {
       delete that._worker;
-      Core.threadPane.displayHtml('<div id="th_title" class="title">' + that._threadTitle + '</div>' + e.data + '<div class="title" style="margin-top: 10px;">' + that._threadTitle + '</div>')
+      Core.threadPane.displayHtml('<div id="th_title" class="title">' + that._threadTitle + '</div>' + e.data.html + '<div class="title" style="margin-top: 10px;">' + that._threadTitle + '</div>')
       if (!reload) Core.threadPane.scrollTop(0);
+      that.resTree = e.data.tree;
+      that.resTreeR = e.data.treeReverse;
       Core.log("（ ・∀・）Responses loaded! : "  + that._threadTitle);
 
       // クイック送金ツールチップの準備
@@ -291,19 +331,29 @@ class Template_Thread {
         }
       });
 
+      //参照レスが存在するかで表示を変更
+      $('a.anchor-reverse').each(function(){
+        var num = $(this).attr('data-anchors');
+        var len = that.resTreeR[num].length;
+        if (len > 0) $(this).parent().children('span.reverse').text('+' + len);
+        else $(this).css('text-decoration', 'none');
+      });
+
       //安価ポップアップの準備
-      $(document).on('mouseover', 'a.anchor', function(event) {
+      $(document).on('mouseenter', 'a.anchor', function(event) {
           $(this).qtip({
             content: {
               text: function(event, api) {
                 (function(){
-                  var ankaStr = api.elements.target.text().slice(2);
-                  responses = that._responses;
+                  var container = api.tooltip;
+                  var anchorStr = api.elements.target.attr('data-anchors');
+                  var anchors = ( $(api.elements.target.hasClass('anchor-reverse'))[0] ) ? that.resTreeR[anchorStr] : anchorStr.split(',');
+                  var responses = that._responses;
                   var worker = new Worker('./threadRender.worker.js');
                   worker.addEventListener('message', function(e) {
-                    api.set('content.text', e.data); // サンプルをコピペしたままなので変数見つからんと怒られた。。。
+                    api.set('content.text', e.data.html); // サンプルをコピペしたままなので変数見つからんと怒られた。。。
                   }, false);
-                  worker.postMessage({responses:responses, threadDesc:that.forRenderer, ankaStr:ankaStr}); // ワーカーにデータを送信（HTML組立処理開始）
+                  worker.postMessage({responses:responses, threadDesc:that.forRenderer, anchors:anchors}); // ワーカーにデータを送信（HTML組立処理開始）
                 })();
                 return 'Loading...'; // Set some initial text
                  }
@@ -312,6 +362,7 @@ class Template_Thread {
               my: 'center left',  // Position my top left...
               at: 'center right', // at the bottom right of...
               viewport: $(window),
+              //container: $(".threadWin-view"), //(typeof api === "undefined") ? $("body") : api.tooltip,
               effect: false,
               adjust: {
                 method: 'shift'
@@ -323,19 +374,20 @@ class Template_Thread {
                effect: false
             },
             hide: {
+              //event: 'click',
               fixed: true,
               delay: 300
             },
-            style: { 'classes': 'anchorTooltip' }
+            style: { 'classes': 'anchorTooltip' },
           });
       });
 
       // 書き込みウィンドウの準備
       if(!("postWindow" in that)) {
-        var dlgHtml = '<div id="postWin-AM-' + that._thread + '" >'
-                    +   '<input type="button" value="書き込み" onclick="BBS.askmona.post(' + that._threadTitle + ', \'' + that._threadTitle + '\')" />'
-                    +   '<input type="checkbox" class="sage" value="sage">sage'
-                    +   '<textarea rows="4" cols="40" class="postText"></textarea><br>'
+        var dlgHtml = '<div id="postWin-' + that._site + '-' + that._board + '-' + that._thread + '" >'
+                    +   '<input type="button" class="window-submit" value="書き込み" />'
+                    +   '<input type="checkbox" class="window-isSage" value="sage">sage'
+                    +   '<textarea rows="4" cols="40" class="window-message"></textarea><br>'
                     + '</div>';
         that.postWindow = $(dlgHtml)
          .dialog({
@@ -345,17 +397,31 @@ class Template_Thread {
             autoOpen: false
           })
          .css({"background":"white", "font-size":"14px"});
+
+         $('#postWin-' + that._site + '-' + that._board + '-' + that._thread + ' > .window-submit').click(function(){
+           var button = this
+           ,   postWin = $(button).parent();
+           $(button).prop("disabled", true); // $(this) は $(baseStr + ' > .window-submit') と同義
+           var data = {
+             isSage: postWin.find('.window-isSage').prop('checked'),
+             message: postWin.find('.window-message').val()
+           };
+           that.post(data).then(function(){
+             $(button).prop("disabled", false);
+             that.load(true);
+           });
+         });
       }
 
       // 送金ウィンドウの準備
       if(!("sendWindow" in that)) {
-        var dlgHtml = '<div id="sendWin-AM-' + that._thread + '" >'
-                    + '  <input type="button" value="送金する" onclick="" />' //BBS.askmona.sendToRes(' + th_obj.t_id + ', 0, 0)
-                    + '  ﾚｽ:<input type="text" class="res-id" value="0" size="6" maxlength="4">　'
-                    + '  額:<input type="text" class="amount" value="0">　'
-                    + '  <input type="checkbox" class="anonymous" value="anonymous">匿名　'
-                    + '  <input type="checkbox" class="sage" value="sage">sage'
-                    + '  <textarea rows="4" cols="40" class="postText"></textarea><br>'
+        var dlgHtml = '<div id="sendWin-' + that._board + '-' + that._thread + '" >'
+                    +   '<input type="button" value="送金する" class="window-submit" />' //BBS.askmona.sendToRes(' + th_obj.t_id + ', 0, 0)
+                    +   'ﾚｽ:<input type="text" class="window-target" value="0" size="6" maxlength="4">　'
+                    +   '額:<input type="text" class="window-amount" value="0">　'
+                    +   '<input type="checkbox" class="window-isAnon" value="anonymous">匿名　'
+                    +   '<input type="checkbox" class="window-isSage" value="sage">sage'
+                    +   '<textarea rows="4" cols="40" class="window-message"></textarea><br>'
                     + '</div>';
         that.sendWindow = $(dlgHtml)
          .dialog({
@@ -365,6 +431,22 @@ class Template_Thread {
             autoOpen: false
           })
          .css({"background":"white", "font-size":"14px"});
+
+         var baseStr = '#sendWin-' + that._board + '-' + that._thread;
+         $(baseStr + ' > .window-submit').click(function(){
+           $(this).prop("disabled", true); // $(this) は $(baseStr + ' > .window-submit') と同義
+           var data = {
+             target: $(baseStr + ' > .window-target').val(),
+             amount: $(baseStr + ' > .window-amount').val(),
+             isAnon: $(baseStr + ' > .window-isAnon').prop('checked'),
+             isSage: $(baseStr + ' > .window-isSage').prop('checked'),
+             message: $(baseStr + ' > .window-message').val()
+           };
+           that.send(data).then(function(){
+             $(baseStr + ' > .window-submit').prop("disabled", false);
+             that.load(true);
+           });
+         });
       }
     }, false);
 
@@ -378,7 +460,7 @@ class Template_Thread {
     var title = this._threadTitle;
     var opts = {};
     Core.history.thread = Core.history.thread.filter(function(v){ //一旦該当項目を削除（それ以外を抽出）
-      return !(v.site === site && v.board === board, v.thread === thread);
+      return !(v.site === site && v.board === board && v.thread === thread);
     });
     if (!remove) Core.history.thread.unshift({site:site, board:board, thread:thread, title:title, opts:opts});
     localStorage.setItem('monask:history:thread', JSON.stringify(Core.history.thread));
@@ -401,6 +483,22 @@ class Template_Thread {
 }
 
 $(function(){
+  var columns = [
+    {id: "rank", name: "No.", field: "rank", width: 50, sortable: true, cssClass: "cell-textRight", defaultSortAsc:false},
+    {id: "cat", name: "カテゴリ", field: "category", width: 100, sortable: true, cssClass: ""},
+    {id: "title", name: "トピック ", field: "title", width: 450, sortable: true, cssClass: ""},
+    {id: "count", name: "レス", field: "count", width: 55, sortable: true, cssClass: "cell-textRight"},
+    {id: "created", name: "スレ立", field: "created", width: 175, sortable: true, cssClass: "cell-textRight", formatter: unix2date},
+  ];
+  var options = {
+    enableCellNavigation: false,
+    enableColumnReorder: false,
+    multiColumnSort: true
+  };
+  window.dataView = new Slick.Data.DataView();
+  window.grid = new Slick.Grid(".subjectWin-view", dataView, columns, options);
+  grid.init();
+
   Core.boardPane.dom = $('.subjectWin-view').get(0);
   Core.threadPane.dom = $('.threadWin-view').get(0);
 
@@ -476,6 +574,7 @@ $(function(){
     }
   });
 
+  $('#tab-container').easytabs();
 });
 
 

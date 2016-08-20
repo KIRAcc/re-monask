@@ -17,6 +17,7 @@ class Site_askMona extends Template_Site {
 
   newBoardObject(board) {return new Board_askMona(this._boardList[board], this);}
 
+  get authInfo() {return {app_id:this.app_id,app_secretkey:this.app_secretkey, u_id:this.u_id, secretkey:this.secretkey};}
 }
 
 class Board_askMona extends Template_Board {
@@ -37,20 +38,23 @@ class Board_askMona extends Template_Board {
     var that = this;
     that.activate();
     that.addToHistory();
-    /*BTN.subjectWin = {
-      reload: function(){BBS.askmona.showTopics();},
-    }*/
-    Core.log("（・ω・）Thread list loading...");
-    //var sReqC_then = ++subjectReqCount; // http://stackoverflow.com/a/9999813
-    $.askmona.topicsAll({}, function(data) {
-      //if (subjectReqCount !== sReqC_then) return;
-      that._subjects = data;
-      that.render();
-    });
+    Core.log("（・ω・）Subject list loading...");
+    console.log(that);
+    if(that._board === 'fav') {
+      $.askmona.favList(that._siteObj.authInfo, {}, function(data) {
+        that._subjects = data.topics;
+        that.render();
+      });
+    } else {
+      $.askmona.topicsAll({}, function(data) {
+        that._subjects = data.topics;
+        that.render();
+      });
+    }
   }
 
-  getThreadObject(data, isSubjectObj) {
-    var key = (isSubjectObj) ? data.t_id : data;
+  getThreadObject(data, isObj) {
+    var key = (isObj) ? data.t_id : data;
     return (key in this.threads) ? this.threads[key] : this.newThreadObject(key);
   }
   newThreadObject(key) {return new Thread_askMona({thread:key}, this);}
@@ -58,6 +62,7 @@ class Board_askMona extends Template_Board {
 
 class Thread_askMona extends Template_Thread {
   init(args) {
+    this._board = 'all';
   }
 
   load(reload) {
@@ -74,6 +79,17 @@ class Thread_askMona extends Template_Thread {
       that._threadTitle = that._threadInfo.title;
       that._responses = data.responses;
       that.render(reload);
+    });
+  }
+
+  post(data){ // ここだけPromise使ってみるという
+    var that = this;
+    if(!('u_id' in that._siteObj && 'secretkey' in that._siteObj)){alert('ログインされていません。。。'); return -1;}
+    Core.log("（ ＾ω＾）Posting...");
+    return new Promise(function(resolve, reject){
+      $.askmona.post(that._siteObj.authInfo, {t_id:that._thread, text:data.message, sage:(data.isSage ? 1 : 0)},function(data){
+        resolve();
+      });
     });
   }
 }
@@ -97,7 +113,6 @@ BBS.askmona = {
     //else return 'あなた使い方間違えてませんか…';
   }*/
 
-  ,authInfo: function(){return {app_id:this.app_id,app_secretkey:this.app_secretkey, u_id:this.u_id, secretkey:this.secretkey};}
 
   ,loginUser: function(u_id){
     var html = '<div id="th_title">プロフィール</div>';
@@ -110,15 +125,6 @@ BBS.askmona = {
     });
   }
 
-  ,showTopics: function(){
-    API.subjectWin.history.add('askmona', {cmd:'listTopics'}, 'listAll', 'トピック一覧 [Ask Mona]');
-  }
-
-  ,openThread: function(thread, isObj, eraseView){
-    var th_id = (isObj) ? thread.t_id : thread;
-    var title = (isObj) ? thread.title : 'ﾄﾋﾟｯｸID: ' + thread;
-    API.threadWin.history.add('askmona', {cmd:'openTopic', thread:thread, isObj:isObj}, 'openTopic:' + th_id, title + ' [Ask Mona]');
-  }
 
   ,showFavs: function(){
     API.subjectWin.history.add('askmona', {cmd:'listFavs'}, 'listFavs', 'お気に入り [Ask Mona]');
@@ -179,15 +185,6 @@ BBS.askmona = {
     BBS.askmona.postWin[t_id].dialog('open');
   }
 
-  ,post: function(t_id){
-    if(!('u_id' in BBS.askmona && 'secretkey' in BBS.askmona)){alert('ログインされていません。。。'); return -1;}
-    var sage = $('#postWin-AM-' + t_id + ' > .sage').prop('checked');
-    var msg = $('#postWin-AM-' + t_id + ' > .postText').val();
-    API.status("（ ＾ω＾）Posting...");
-    $.askmona.post(BBS.askmona.authInfo(), {t_id:t_id, text:msg, sage:(sage ? 1 : 0)},function(data){
-      BBS.askmona.openThread(t_id, false, false);
-    });
-  }
 
   ,showSendWin: function(t_id, r_id){
     if(!('u_id' in BBS.askmona && 'secretkey' in BBS.askmona)){alert('ログインされていません。。。'); return -1;}

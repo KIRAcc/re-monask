@@ -3,16 +3,20 @@ jQuery.askmona = {
   topics:function(opts,callback){
     jQuery.getJSON(this.endpoint+'topics/list?callback=?',opts,callback);
   },
-  topicsAll:function(opts,callback){
-    var list=[],
-    get = function(off){
-      opts.limit=1000; opts.offset=off;
-      jQuery.askmona.topics(opts, function(json){
-        Array.prototype.push.apply(list, json.topics);
-        if(json.topics.length === 1000)get(off+1000,callback);  else callback(list);
-      });
-    };
-    get(0);
+  topicsAll:function(opts,callback){ // Ask Monaは1000レス×10ページの10000トピックが最大数らしい。それを全て取得し連結まで行う
+    var list=[], i, finished = 0;
+    for (i=0; i<10; i++) { // 1～10ページ全てを並列取得するため、リクエスト送信を10回ループ
+      (function(off){
+        opts.limit=1000; opts.offset=off;
+        jQuery.askmona.topics({limit:1000, offset:1000*i}, function(json){
+          Array.prototype.push.apply(list, json.topics);
+          if(++finished === 10) { // 全てのページを取得し終えていることを確認し、番号順にソートした一覧をコールバックに渡す
+            list = list.sort(function(a,b){ return (a.rank === b.rank ? 0 : (a.rank > b.rank ? 1 : -1)); });
+            callback({status:1, topics:list});
+          }
+        });
+      })();
+    }
   },
   responses:function(opts,callback){
     //opts.to=1000;
