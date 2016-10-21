@@ -373,11 +373,7 @@ class Template_Thread {
                ready: true,
                effect: false
             },
-            hide: {
-              //event: 'click',
-              fixed: true,
-              delay: 300
-            },
+            hide: 'unfocus',
             style: { 'classes': 'anchorTooltip' },
           });
       });
