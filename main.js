@@ -110,6 +110,7 @@ var Core = {
 
   threadPane: {
     active: {},
+    anchorTooltips: [],
     displayHtml: function (html) {
       $('.threadWin-view').html(html);
     },
@@ -352,6 +353,7 @@ class Template_Thread {
                   var worker = new Worker('./threadRender.worker.js');
                   worker.addEventListener('message', function(e) {
                     api.set('content.text', e.data.html); // サンプルをコピペしたままなので変数見つからんと怒られた。。。
+                    Core.threadPane.anchorTooltips.push(api);
                   }, false);
                   worker.postMessage({responses:responses, threadDesc:that.forRenderer, anchors:anchors}); // ワーカーにデータを送信（HTML組立処理開始）
                 })();
@@ -371,10 +373,44 @@ class Template_Thread {
             show: {
                event: event.type,
                ready: true,
-               effect: false
             },
-            hide: 'unfocus',
-            style: { 'classes': 'anchorTooltip' },
+            hide: {
+              delay: 50,
+              fixed: true
+            },
+            events: {
+                hide: function(event, api) {
+                  api.cache.focus = false;
+                  var arrAlias = Core.threadPane.anchorTooltips;
+                  if(arrAlias.length < 1) return;
+                  console.log(arrAlias);
+
+                  var lastElem_api = arrAlias[arrAlias.length-1];
+                  if (lastElem_api.get('id') !== api.get('id')) {
+                    event.preventDefault();
+                    return;
+                  }else{
+                    api.destroy();
+                    arrAlias.pop();
+                    setTimeout(function(){
+                      var arrAlias = Core.threadPane.anchorTooltips;
+                      console.log(arrAlias);
+                      while (true) {
+                        if(arrAlias.length <= 0) break;
+                        var i = arrAlias.length-1;
+                        if(arrAlias[i].cache.focus !== false) break;
+                        arrAlias[i].destroy();
+                        arrAlias.splice(i, 1);
+                      }
+                    }, 50);
+                  }
+                },
+                focus: function(event, api) {
+                  api.cache.focus = true;
+                  //console.log(Core.threadPane.anchorTooltips);
+                }
+            },
+            style: { 'classes': 'anchorTooltip' }
           });
       });
 
