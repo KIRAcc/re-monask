@@ -1,7 +1,7 @@
 jQuery.askmona = {
-  endpoint:"http://askmona.org/v1/",
+  endpoint:"http://askmona.org/v1",
   topics:function(opts,callback){
-    jQuery.getJSON(this.endpoint+'topics/list?callback=?',opts,callback);
+    jQuery.getJSON(this.endpoint+'/topics/list?callback=?',opts,callback);
   },
   topicsAll:function(opts,callback){ // Ask Monaは1000レス×10ページの10000トピックが最大数らしい。それを全て取得し連結まで行う
     var list=[], i, finished = 0;
@@ -20,37 +20,37 @@ jQuery.askmona = {
   },
   responses:function(opts,callback){
     //opts.to=1000;
-    jQuery.getJSON(this.endpoint+'responses/list?callback=?', opts, callback);
+    jQuery.getJSON(this.endpoint+'/responses/list?callback=?', opts, callback);
   },
   profile:function(uid,callback){
-    jQuery.getJSON(this.endpoint+'users/profile?callback=?', {u_id:uid}, callback);
+    jQuery.getJSON(this.endpoint+'/users/profile?callback=?', {u_id:uid}, callback);
   },
   myprof:function(authInfo, opts, callback){
     jQuery.extend(opts, jQuery.askmona.authKey(authInfo));
-    jQuery.post(this.endpoint+'users/myprofile',
+    jQuery.post(this.endpoint+'/users/myprofile',
       opts, callback, "json"
     );
   },
   favList:function(authInfo, opts, callback){
     jQuery.extend(opts, jQuery.askmona.authKey(authInfo));
-    jQuery.post(this.endpoint+'favorites/list',
+    jQuery.post(this.endpoint+'/favorites/list',
       opts, callback, "json"
     );
   },
   post:function(authInfo, opts, callback){
     jQuery.extend(opts, jQuery.askmona.authKey(authInfo));
-    jQuery.post(this.endpoint+'responses/post',
+    jQuery.post(this.endpoint+'/responses/post',
       opts, callback, "json"
     );
   },
   send:function(authInfo, opts, callback){
     jQuery.extend(opts, jQuery.askmona.authKey(authInfo));
-    jQuery.post(this.endpoint+'account/send',
+    jQuery.post(this.endpoint+'/account/send',
       opts, callback, "json"
     );
   },
   verify:function(authInfo,callback){
-    jQuery.post(this.endpoint+'auth/verify',
+    jQuery.post(this.endpoint+'/auth/verify',
       jQuery.askmona.authKey(authInfo), callback, "json"
     );
   },
@@ -64,7 +64,7 @@ jQuery.askmona = {
   unixtime:function(str){
     var objDate = new Date(str * 1000);
     var nowDate = new Date();
-    myHour = Math.floor((nowDate.getTime()-objDate.getTime()) / (1000*60*60)) + 1; //���ݎ��ԂƂ̍�
+    myHour = Math.floor((nowDate.getTime()-objDate.getTime()) / (1000*60*60)) + 1;
     var year = objDate.getFullYear();
     var month = objDate.getMonth() + 1;
     var date = objDate.getDate();
