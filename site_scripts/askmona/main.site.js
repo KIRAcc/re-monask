@@ -6,8 +6,8 @@ class Site_askMona extends Template_Site {
     this.app_id = 6;
     this.app_secretkey = 'Ay07w6NIChrag34dbLi8oqRwxcZABVhmHtfg8EaYQUyk=';
     this._boardList =  {
-      all: {board:"all", name:"トピック一覧"}
-      ,fav: {board:"fav", name:"お気に入り"}
+      all: {board:"all", name:"トピック一覧"},
+      fav: {board:"fav", name:"お気に入り"}
     }
   }
 
