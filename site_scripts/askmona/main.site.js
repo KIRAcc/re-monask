@@ -34,17 +34,18 @@ class Board_askMona extends Template_Board {
     ];
   }
 
-  load() {
-    var that = this;
-    that.activate();
-    that.addToHistory();
-    Core.log("（・ω・）Subject list loading...");
-    if(that._board === 'fav') {
+  load() { // 板のスレ一覧を取得して画面に表示
+    var that = this; // 別スコープ入ってもこのトピックオブジェクトを呼び出すためのおまじない
+    that.activate(); // 今、画面はこの板のスレ一覧を表示しているというのを設定
+    that.addToHistory(); // 板履歴に追加／既存なら浮上してくれる
+    Core.log("（・ω・）Subject list loading..."); // ログ表示
+
+    if(that._board === 'fav') { // 「お気に入り」を取得する場合
       $.askmona.favList(that._siteObj.authInfo, {}, function(data) {
         that._subjects = data.topics;
         that.render();
       });
-    } else {
+    } else { // それ以外（＝全トピック）を取得する場合
       $.askmona.topicsAll({}, function(data) {
         that._subjects = data.topics;
         that.render();
@@ -52,16 +53,17 @@ class Board_askMona extends Template_Board {
     }
   }
 
-  getThreadObject(data, isObj) {
-    var key = (isObj) ? data.t_id : data;
-    return (key in this.threads) ? this.threads[key] : this.newThreadObject(key);
+  getThreadObject(data, isObj) { // dataに渡された内容から、板内のトピック（thread）のインスタンスを渡す
+    var key = (isObj) ? data.t_id : data; // isObjがtrueならdataはAsk Monaのトピックオブジェクト。そうでなければdataはトピックIDの数値（文字列かも？）
+    return (key in this.threads) ? this.threads[key] : this.newThreadObject(key); // ↑でトピックIDをkeyに格納したので、トピックIDの指すトピックのインスタンスを返す（無ければ新しく作られる）
   }
-  newThreadObject(key) {return new Thread_askMona({thread:key}, this);}
+
+  newThreadObject(key) {return new Thread_askMona({thread:key}, this);} // スレのインスタンスを新しく作る
 }
 
 class Thread_askMona extends Template_Thread {
   init(args) {
-    this._board = 'all';
+    this._board = 'all'; // Ask Monaには板が存在しないため、ここでallと指定する。そうしないと「お気に入り」（fav）からトピックを開くとallとfavで同じトピでも履歴が２つ記録されてしまう
   }
 
   load(reload) {
