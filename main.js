@@ -22,7 +22,7 @@ var Core = {
         arr = that.thread;
         dom.empty();
         for(i=0;i<arr.length;i++){
-          dom.append('<option value="' + i + '">□' + arr[i].title + '</option>');
+          dom.append('<option value="' + i + '">' + arr[i].title + '</option>');
         }      })();
     }
   },
