@@ -66,19 +66,15 @@ class Thread_askMona extends Template_Thread {
     this._board = 'all'; // Ask Monaには板が存在しないため、ここでallと指定する。そうしないと「お気に入り」（fav）からトピックを開くとallとfavで同じトピでも履歴が２つ記録されてしまう
   }
 
-  load(reload) {
+  get() {
     var that = this;
-    if (that._isWorking) return;
-    that.activate();
-    var html = '<div id="th_title" class="title">' + that._threadTitle + '</div>';
-    if (!reload) $(Core.threadPane.dom).html(html);
-    Core.log("（ ・～・）Responses loading... : "  + that._threadTitle);
-    $.askmona.responses({t_id:that._thread, to:1000, topic_detail:1}, function(data){
-      if (!that.isActive) return;
-      that._threadInfo = data.topic;
-      that._threadTitle = that._threadInfo.title;
-      that._responses = data.responses;
-      that.render(reload);
+    return new Promise(function(resolve, reject){
+      $.askmona.responses({t_id:that._thread, to:1000, topic_detail:1}, function(data){
+        that._threadInfo = data.topic;
+        that._threadTitle = that._threadInfo.title;
+        that._responses = data.responses;
+        resolve();
+    });
     });
   }
 

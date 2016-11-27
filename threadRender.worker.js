@@ -1,5 +1,5 @@
 self.addEventListener('message', function(e) {
-  var thread = e.data.threadDesc
+  var thread = e.data.threadInfo
   ,   responses = e.data.responses
   ,   isAnchor = ("anchors" in e.data)
   ,   html = ''
@@ -21,8 +21,6 @@ self.addEventListener('message', function(e) {
 
     tree[n] = [];
 
-    tipHtml = '<span><input type="button" value="0.114114" onclick="BBS.askmona.sendToRes(' + thread.t_id + ', ' + (n+1) + ', 11411400)" /></span>';
-
     var monaInt = res.receive.slice(0, -8);
     if (monaInt === '') monaInt = '0';
     var mona = parseFloat(monaInt + '.' + res.receive.slice(-8));
@@ -31,7 +29,7 @@ self.addEventListener('message', function(e) {
     html += '<a href="#" class="ru" onclick="BBS.askmona.showProfile(' + res.u_id + ')">' + res.u_name + res.u_dan + '</a>： '; // 名前
     html += timetostr(res.created) + '</span> ：'; // 時刻
     html += '<span class="rm">+' + mona + 'MONA/' + res.rec_count + '人</span> '; // 投げMONA
-    html += '<a class="send" href="javascript:void(0);" onclick="BBS.askmona.showSendWin(' + thread.t_id + ', ' + (n+1) + ')" title="' + escapeHtml(tipHtml) + '">←送る</a>'; //
+    html += '<a class="send" href="javascript:void(0);">←送る</a>'; //
     html += '</p> <p class="res lv' + res.res_lv + '">';
     html += text.replace(/\n/g,"<br />")
                 .replace(/(https?:\/\/[^ <]+)/g, '<a target="_blank" rel="nofollow" href="$1">$1</a>')

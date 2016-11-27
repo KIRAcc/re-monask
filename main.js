@@ -298,47 +298,33 @@ class Template_Thread {
 
   get forRenderer() {return {site:this._site, siteTitle:this._siteTitle, board:this._boardTitle, boardTitle:this._boardTitle, thread:this._thread, threadTitle:this._threadTitle} }
 
-  load(reload) {}
+  load(reload) {
+    var that = this;
+    if (that._isLoading) return;
+    that.activate();
+    that._isLoading = true;
+    var html = '<div id="th_responses"></div><div id="th_title" class="title">' + that._threadTitle + '</div>';
+    if (!reload) $(Core.threadPane.dom).html(html);
+    Core.log("（ ・～・）Responses loading... : "  + that._threadTitle);
+    that.get().then(function(){
+      if (that.isActive) that.render(reload);
+    });
+  }
 
   render(reload) {
     var that = this;
-    if (that._isWorking || !that.isActive) return;
+    if (!that.isActive) return;
     if (this._responses.length === 0) that.load();
     that.activate();
 
     var responses = that._responses.concat();
 
-    that._worker = new Worker('./threadRender.worker.js');
     Core.log("（ ・～・）Responses RENDERING... : "  + that._threadTitle);
 
-    that._worker.addEventListener('message', function(e) {
-      delete that._worker;
-      Core.threadPane.displayHtml('<div id="th_title" class="title">' + that._threadTitle + '</div>' + e.data.html + '<div class="title" style="margin-top: 10px;">' + that._threadTitle + '</div>')
+    this.buildThreadHtml(this).then(function(elem, resTree, resTreeR) {
+      $(Core.threadPane.dom).children('div#th_responses').replaceWith(elem);
       if (!reload) Core.threadPane.scrollTop(0);
-      that.resTree = e.data.tree;
-      that.resTreeR = e.data.treeReverse;
       Core.log("（ ・∀・）Responses loaded! : "  + that._threadTitle);
-
-      // クイック送金ツールチップの準備
-      $('.send').qtip({
-        position: {
-          my: 'left center',  // Position my top left...
-          at: 'center right', // at the bottom right of...
-          viewport: $(window),
-        },
-        hide: {
-            fixed: true,
-            delay: 300
-        }
-      });
-
-      //参照レスが存在するかで表示を変更
-      $('a.anchor-reverse').each(function(){
-        var num = $(this).attr('data-anchors');
-        var len = that.resTreeR[num].length;
-        if (len > 0) $(this).parent().children('span.reverse').text('+' + len);
-        else $(this).css('text-decoration', 'none');
-      });
 
       // 書き込みウィンドウの準備
       if(!("postWindow" in that)) {
@@ -406,9 +392,51 @@ class Template_Thread {
            });
          });
       }
-    }, false);
+      that._isLoading = false;
+    });
 
-    that._worker.postMessage({responses:responses, threadDesc:that.forRenderer}); // ワーカーにデータを送信（HTML組立処理開始）
+  }
+
+  buildThreadHtml(){
+    var that = this;
+    return new Promise(function(resolve, reject){
+      var worker = new Worker('./threadRender.worker.js');
+      worker.addEventListener('message', function(e) {
+        that.resTree = e.data.tree;
+        that.resTreeR = e.data.treeReverse;
+        var elem = $('<div id="th_responses"></div>');
+        elem.append(e.data.html);
+        Core.log("（ ・∀・）Responses loaded! : "  + that._threadTitle);
+
+        //参照レスが存在するかで表示を変更
+        elem.find('a.anchor-reverse').each(function(){
+          var num = $(this).attr('data-anchors');
+          var len = that.resTreeR[num].length;
+          if (len > 0) $(this).parent().children('span.reverse').text('+' + len);
+          else $(this).css('text-decoration', 'none');
+        });
+
+        // クイック送金ツールチップの準備
+        elem.find('.send').qtip({
+          content: {
+            text: '<span><input type="button" value="0.114114" /></span>'
+          },
+          position: {
+            my: 'left center',  // Position my top left...
+            at: 'center right', // at the bottom right of...
+            viewport: $(window),
+          },
+          hide: {
+              fixed: true,
+              delay: 300
+          }
+        });
+
+        if (that._isWorking || !that.isActive) reject();
+        else resolve(elem);
+      }, false);
+      worker.postMessage({responses:that._responses, threadInfo:that.forRenderer}); // ワーカーにデータを送信（HTML組立処理開始）
+    });
   }
 
   addToHistory(remove) { // 履歴に追加／既存なら浮上
@@ -610,7 +638,6 @@ $(function(){
   });
 
 });
-
 
 function unix2date(row, cell, value, columnDef, dataContext) {
   return new Date(value*1000).toNormalString();
