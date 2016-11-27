@@ -490,7 +490,7 @@ $(function(){
 
   Core.bbsMenu.render();
 
-     // 板履歴の読み込み、設定
+  // 板履歴の読み込み、設定
   $('#bbs-history').change(function(undefined){ // 板履歴で選択された際の処理
     var selected = $('#bbs-history').val();
     var arr = Core.history.board[selected];
