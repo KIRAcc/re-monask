@@ -1,5 +1,5 @@
 jQuery.askmona = {
-  endpoint:"http://askmona.org/v1",
+  endpoint: "https://askmona.org/v1",
   topics:function(opts,callback){
     jQuery.getJSON(this.endpoint+'/topics/list?callback=?',opts,callback);
   },
