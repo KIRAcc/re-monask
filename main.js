@@ -307,7 +307,9 @@ class Template_Thread {
     if (!reload) $(Core.threadPane.dom).html(html);
     Core.log("（ ・～・）Responses loading... : "  + that._threadTitle);
     that.get().then(function(){
-      if (that.isActive) that.render(reload);
+      $(Core.threadPane.dom).children('div#th_title').text(that._threadTitle); // スレッド名がthis.get()で判明することを考慮し、スレッド名を再度投入
+      that.addToHistory(); // 同上。履歴を更新
+      that.render(reload);
     });
   }
 
@@ -315,7 +317,6 @@ class Template_Thread {
     var that = this;
     if (!that.isActive) return;
     if (this._responses.length === 0) that.load();
-    that.activate();
 
     var responses = that._responses.concat();
 
@@ -394,7 +395,6 @@ class Template_Thread {
       }
       that._isLoading = false;
     });
-
   }
 
   buildThreadHtml(){
