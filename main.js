@@ -591,7 +591,6 @@ $(function(){
           //container: $(".threadWin-view"), //(typeof api === "undefined") ? $("body") : api.tooltip,
           effect: false,
           adjust: {
-            x: -10,
             method: 'shift'
           }
         },
@@ -608,25 +607,26 @@ $(function(){
               api.cache.focus = false;
               var arrAlias = Core.threadPane.anchorTooltips;
               if(arrAlias.length < 1) return;
+              console.log(arrAlias);
 
               var lastElem_api = arrAlias[arrAlias.length-1];
               if (lastElem_api.get('id') !== api.get('id')) {
                 event.preventDefault();
                 return;
               }else{
+                api.destroy();
+                arrAlias.pop();
                 setTimeout(function(){
-                  api.hide();
-                  api.destroy();
-                  var pop = arrAlias.pop();
+                  var arrAlias = Core.threadPane.anchorTooltips;
+                  console.log(arrAlias);
                   while (true) {
                     if(arrAlias.length <= 0) break;
                     var i = arrAlias.length-1;
                     if(arrAlias[i].cache.focus !== false) break;
                     arrAlias[i].destroy();
-                    arrAlias.pop();
+                    arrAlias.splice(i, 1);
                   }
                 }, 50);
-                event.preventDefault();
               }
             },
             focus: function(event, api) {
