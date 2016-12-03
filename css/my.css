@@ -112,20 +112,6 @@
     color:blue;
   }
 
-  select#thread-history, select#board-history {
-    background-position: 3px center;
-    border: 1px solid gray;
-  }
-
-  select#thread-history, select#thread-history > option {
-    background-image: url(icons/board.png);
-    background-repeat: no-repeat;
-    padding-left: 16px;
-  }
-
-  select#thread-history > option, select#board-history > board {
-    background-position: 1px center;
-  }
 /* ﾂｸﾀﾞｵﾘｼﾞﾅﾙまで */
 
 
