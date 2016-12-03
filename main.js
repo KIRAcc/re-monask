@@ -608,7 +608,6 @@ $(function(){
               api.cache.focus = false;
               var arrAlias = Core.threadPane.anchorTooltips;
               if(arrAlias.length < 1) return;
-              console.log(arrAlias);
 
               var lastElem_api = arrAlias[arrAlias.length-1];
               if (lastElem_api.get('id') !== api.get('id')) {
@@ -616,10 +615,9 @@ $(function(){
                 return;
               }else{
                 setTimeout(function(){
-                  //var arrAlias = Core.threadPane.anchorTooltips;
+                  api.hide();
                   api.destroy();
                   var pop = arrAlias.pop();
-                  console.log(pop);
                   while (true) {
                     if(arrAlias.length <= 0) break;
                     var i = arrAlias.length-1;
